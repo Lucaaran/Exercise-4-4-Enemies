@@ -2,9 +2,8 @@ extends CharacterBody2D
 
 var player = null
 @onready var ray = $See
-@export var speed = 1000
-@export var looking_speed = 200
-var line_of_sight = false
+@export var speed = 800
+@export var looking_speed = 100
 var nav_ready = false
 
 var mode = ""
@@ -14,14 +13,27 @@ var points = []
 const margin = 1.5
 
 func _ready():
-	$AnimatedSprite2D.play("move")
+	$AnimatedSprite2D.play("Moving")
 	call_deferred("nav_setup")
 
 func nav_setup():
-	# Wait for the first physics frame so the NavigationServer can sync.
-	await get_tree().physics_frame
-	$NavigationAgent2D.target_position = global_position
-	nav_ready = true
+	$NavigationAgent2D.target_position = player.global_position
+	points = $NavigationAgent2D.get_next_path_position()
+	$See.target_position = to_local(player.global_position)
+	var c = $See.get_collider()
+	var s= speed
+	if c == player:
+		s = speed
+	if points != Vector2.ZERO:
+		print(points)
+	var distance = points - global_position
+	var direction = distance.normalized()
+	$AnimatedSprite2D.flip_h = direction.x < 0
+	if distance.length() > margin:
+		velocity = direction*s
+	else:
+		velocity = Vector2.ZERO
+		move_and_slide()
 
 func _physics_process(_delta):
 	player = get_node_or_null("/root/Game/Player_Container/Player")
